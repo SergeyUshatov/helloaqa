@@ -1,0 +1,63 @@
+# Use postgres/example user/password credentials
+version: '3.1'
+
+services:
+
+  db:
+    image: postgres
+    container_name: edu-db
+    restart: always
+    environment:
+      POSTGRES_PASSWORD: example
+    ports:
+      - 5432:5432
+    networks:
+      - mynetwork
+
+  adminer:
+    image: adminer
+    container_name: edu-adminer
+    restart: always
+    networks:
+      - mynetwork
+    ports:
+      - 8081:8080
+
+  edu-be:
+    image: helloaqa/edu-be:0.0.1
+    container_name: edu-back
+    depends_on:
+      - db
+    networks:
+      - mynetwork
+    restart: always
+    ports:
+      - 8080:8080
+    expose:
+      - 8080
+    environment:
+      SPRING_APPLICATION_JSON: '{
+              "spring.datasource.url":"jdbc:postgresql://db:5432/postgres",
+              "spring.datasource.username":"postgres",
+              "spring.datasource.password":"example",
+              "spring.jpa.hibernate.ddl-auto":"create-drop",
+              "spring.jpa.show-sql":true,
+              "spring.jpa.properties.hibernate.dialect":"org.hibernate.dialect.PostgresPlusDialect",
+              "spring.jpa.properties.hibernate.format_sql":true,
+              "server.error.include-message":"always"
+            }'
+
+  edu-fe:
+    image: helloaqa/edu-fe:0.0.1
+    container_name: edu-ui
+    depends_on:
+      - db
+      - edu-be
+    restart: always
+    ports:
+      - 4200:80
+    networks:
+      - mynetwork
+
+networks:
+  mynetwork:
